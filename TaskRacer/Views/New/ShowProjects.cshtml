@@ -1,0 +1,156 @@
+﻿@model List<Project>
+@if (string.IsNullOrEmpty(ViewBag.currentUser))
+{
+    
+    <h2>You must be logged in!</h2>
+}
+else
+{
+    <button id="CP" class="buttons">Create Project</button>
+    <br />
+    <br />
+    <h2>Projects</h2>
+    @foreach (Project project in Model)
+    {   <div class="project">
+        <a href="@Url.Action("ShowProgress","New", new {proj_id = project.ProjID })" class="projectN">@project.proj_name</a>
+        @if (project.users.First<string>() == ViewBag.currentUser)
+        {
+            <a href="@Url.Action("DeleteProject","New", new {proj_id = project.ProjID})" style="right:0;" class="buttons DelEdit projectB">Delete</a>
+            <button type="button" class="edit buttons projectB" data-myvariable="@project.ProjID">Edit Project</button>
+        }
+        </div>
+    }
+
+    <div class="overlay" id="CPOverlay">
+        <div class="floatingMenu" id="CPMenu">
+            <h2>Create a new project</h2>
+            <form asp-action="CreateProject" id="CreateProject">
+                <input type="hidden" value="@ViewBag.currentUser" name="users" />
+                <div class="form-group">
+                    <label for="proj_name" class="control-label custominputs">Name</label>
+                    <input name="proj_name" class="form-control custominputs" />
+                </div>
+                <div class="form-group">
+                    <input type="submit" value="Create" class="buttons custominputs" />
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="overlay" id="editOverlay">
+        <div class="floatingMenu" id="editMenu">
+            <h2>Edit Project</h2>
+            <form asp-action="UpdateProject" id="UpdateProject">
+                <input type="hidden" name="proj_id" value="" id="proj_id">
+                <div class="form-group">
+                    <label for="name" class="control-label custominputs">Name</label>
+                    <input name="name" class="form-control custominputs" id="AddUserField" />
+                </div>
+                <div class="form-group">
+                    <input type="submit" value="Submit" class="custominputs buttons" onsubmit="ShowTasks.cshtml" />
+                </div>
+            </form>
+        </div>
+    </div>
+    <style>
+        #CPOverlay, #CPMenu, #editOverlay, #editMenu {
+            display: none;
+        }
+    </style>
+}
+
+@section Scripts{
+    <script src="https://ajax.aspnetcdn.com/ajax/jquery.unobtrusive-ajax/3.2.6/jquery.unobtrusive-ajax.min.js"></script>
+    <script>
+        if (document.getElementById('CP') != null){
+            document.getElementById('CP').addEventListener('click', function () {
+                document.getElementById('CPOverlay').style.display = 'block';
+                document.getElementById('CPMenu').style.display = 'block';
+            });
+        }
+
+        if (document.getElementById('CPOverlay') != null) {
+            document.getElementById('CPOverlay').addEventListener('click', function () {
+                document.getElementById('CPOverlay').style.display = 'none';
+                document.getElementById('CPMenu').style.display = 'none';
+            });
+        }
+            if (document.getElementById('CPMenu') != null) {
+            document.getElementById('CPMenu').addEventListener('click', function (event) {
+                event.stopPropagation();
+            });
+            }
+
+        document.getElementById('editOverlay').addEventListener('click', function () {
+            document.getElementById('editOverlay').style.display = 'none';
+            document.getElementById('editMenu').style.display = 'none';
+        });
+
+        document.getElementById('editMenu').addEventListener('click', function (event) {
+            event.stopPropagation();
+        });
+
+        $(document).ready(function () {
+            $(".edit").click(function () {
+                document.getElementById('editOverlay').style.display = 'block';
+                document.getElementById('editMenu').style.display = 'block';
+                var myVariable = $(this).data("myvariable");
+                $("#proj_id").val(myVariable);
+            });
+        });
+
+        $(document).ready(function () {
+            $('#CreateProject').on('submit', function (e) {
+                e.preventDefault();
+
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function (response) {
+                        var firestoreId = response;
+                        console.log('Created file ID: ' + firestoreId);
+
+                        // Redirect to the new page with the Firestore ID as a parameter
+                        window.location.href = '/New/ShowProgress?proj_id=' + firestoreId;
+                    },
+                    error: function (xhr, status, error) {
+                        alert('An error occurred: ' + error);
+                    }
+                });
+            });
+        });
+
+        $(document).ready(function () {
+            $('#UpdateProject').on('submit', function (e) {
+                e.preventDefault();
+
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function (response) {
+                        location.reload()
+                    },
+                    error: function (xhr, status, error) {
+                        alert('An error occurred: ' + error);
+                    }
+                });
+            });
+        });
+
+        $('.DelEdit').click(function (e) {
+            e.preventDefault();
+
+            $.ajax({
+                url: $(this).attr('href'),
+                type: 'POST',
+                success: function (response) {
+                    location.reload();
+                },
+                error: function (xhr, status, error) {
+                    console.error(error);
+                }
+            });
+        });
+    </script>
+}

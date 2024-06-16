@@ -1,0 +1,266 @@
+﻿@model List<Tsk>
+@if (string.IsNullOrEmpty(ViewBag.currentUser))
+{
+    <h3>You must be logged in!</h3>
+}
+else if (!(bool)ViewBag.access)
+{
+    <h3>Access forbidden</h3>
+}
+else if (Model == null)
+{
+    <h3>Oops! This progress does not exist!</h3>
+} 
+else{
+    if (ViewBag.owner == ViewBag.currentUser)
+    {
+        <button id="CT" class="buttons">Create Task</button>
+    }
+    <button id="user" class="buttons">Users</button>
+
+    <br />
+    <br />
+    <h2>Tasks</h2>
+    @foreach (Tsk task in Model)
+    {
+        <div class="task">
+            <h3 class="taskM">@task.task_name</h3>
+            <p class="taskM">@task.description</p>
+            <p class="taskM">Reward: @task.reward</p>
+        
+        
+            @if (ViewBag.owner == ViewBag.currentUser)
+            {
+                <a href="@Url.Action("DeleteTask", "New", new {task = task.id, pid = ViewBag.Id, proj_id=ViewBag.proj_Id})" class="DelEdit buttons projectB" style="right:0;">Delete</a>
+                <button type="button" class="edit buttons projectB" data-myvariable="@task.id">Edit Task</button>
+            }
+        </div>
+    }
+    <div class="overlay" id="CTOverlay">
+        <div class="floatingMenu" id="CTMenu">
+            <h2>Add new task</h2>
+            <form asp-action="CreateTask" id="CreateTask">
+                <input type="hidden" value="@ViewBag.Id" name="pid" />
+                <input type="hidden" value="@ViewBag.proj_Id" name="proj_id" />
+                <div class="form-group">
+                    <label for="order_num" class="control-label custominputs">ID</label>
+                    <input name="order_num" class="form-control custominputs" />
+                </div>
+                <div class="form-group">
+                    <label for="task_name" class="control-label custominputs">Task Name</label>
+                    <input name="task_name" class="form-control custominputs" />
+                </div>
+                <div class="form-group">
+                    <label for="description" class="control-label custominputs">Description</label>
+                    <input name="description" class="form-control custominputs" />
+                </div>
+                <div class="form-group">
+                    <label for="reward" class="control-label custominputs">Reward</label>
+                    <input name="reward" class="form-control custominputs" />
+                </div>
+                <div class="form-group">
+                    <input type="submit" value="Create" class="custominputs buttons" />
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="overlay" id="userOverlay">
+        <div class="floatingMenu" id="userMenu">
+            @if (ViewBag.owner == ViewBag.currentUser)
+            {
+                <h2>Add User to progress</h2>
+                <form asp-action="AddUserToProgress" id="AddUser">
+                    <input type="hidden" value="@ViewBag.proj_Id" name="proj_id" />
+                    <input type="hidden" value="@ViewBag.Id" name="pid" />
+                    <div class="form-group">
+                        <label for="name" class="control-label custominputs">User id</label>
+                        <input name="user_ID" class="form-control custominputs" id="AddUserField" />
+                    </div>
+                    <div class="form-group">
+                        <input type="submit" value="Add" class="custominputs buttons" onsubmit="ShowTasks.cshtml" />
+                    </div>
+                </form>
+                <br>
+            }
+            <h2>Users that have acces right now:</h2>
+            @foreach (User user in ViewBag.Array)
+            {
+                <p>@user.Id    @user.username    @if (ViewBag.owner == ViewBag.currentUser)
+                    {
+                        @if (!(ViewBag.owner == user.Id))
+                        {
+                            <a href="@Url.Action("DeleteUserFromProgress","New", new {user = user.Id, proj_id = ViewBag.proj_Id, pid = ViewBag.Id})" class="DelEdit">Delete</a>
+                        }
+                        
+                    }
+                </p>
+            }
+        </div>
+    </div>
+	<div class="overlay" id="editOverlay">
+        <div class="floatingMenu" id="editMenu">
+            <h2>Edit Task</h2>
+            <form asp-action="UpdateTask" id="EditTask">
+                <input type="hidden" value="@ViewBag.Id" name="pid" />
+                <input type="hidden" value="@ViewBag.proj_Id" name="proj_id" />
+                <input type="hidden" value="" name="task_id" id="task_id"/>
+                <div class="form-group">
+                    <label for="task_name" class="control-label custominputs">Task Name</label>
+                    <input name="task_name" class="form-control custominputs" id="task_name" />
+                </div>
+                <div class="form-group">
+                    <label for="description" class="control-label custominputs">Description</label>
+                    <input name="description" class="form-control custominputs" id="description" />
+                </div>
+                <div class="form-group">
+                    <label for="reward" class="control-label custominputs">Reward</label>
+                    <input name="reward" class="form-control custominputs" id="reward" />
+                </div>
+                <div class="form-group">
+                    <input type="submit" value="Submit" class="custominputs buttons"  />
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        #CTOverlay, #CTMenu, #userMenu, #userOverlay, #editOverlay, #editMenu {
+            display: none;
+        }
+    </style>
+    
+}
+@section Scripts{
+    <script src="https://ajax.aspnetcdn.com/ajax/jquery.unobtrusive-ajax/3.2.6/jquery.unobtrusive-ajax.min.js"></script>
+    <script>
+        if(document.getElementById('CT') != null){
+            document.getElementById('CT').addEventListener('click', function () {
+                document.getElementById('CTOverlay').style.display = 'block';
+                document.getElementById('CTMenu').style.display = 'block';
+            });
+        }
+
+        document.getElementById('CTOverlay').addEventListener('click', function () {
+            document.getElementById('CTOverlay').style.display = 'none';
+            document.getElementById('CTMenu').style.display = 'none';
+        });
+
+        document.getElementById('CTMenu').addEventListener('click', function (event) {
+            event.stopPropagation();
+        });
+
+        document.getElementById('user').addEventListener('click', function () {
+            document.getElementById('userOverlay').style.display = 'block';
+            document.getElementById('userMenu').style.display = 'block';
+        });
+
+        document.getElementById('userOverlay').addEventListener('click', function () {
+            document.getElementById('userOverlay').style.display = 'none';
+            document.getElementById('userMenu').style.display = 'none';
+        });
+
+        document.getElementById('userMenu').addEventListener('click', function (event) {
+            event.stopPropagation();
+        });
+
+
+        document.getElementById('editOverlay').addEventListener('click', function () {
+            document.getElementById('editOverlay').style.display = 'none';
+            document.getElementById('editMenu').style.display = 'none';
+        });
+
+        document.getElementById('editMenu').addEventListener('click', function (event) {
+            event.stopPropagation();
+        });
+
+        $(document).ready(function () {
+            $(".edit").click(function () {
+                document.getElementById('editOverlay').style.display = 'block';
+                document.getElementById('editMenu').style.display = 'block';
+                var myVariable = $(this).data("myvariable");
+                $("#task_id").val(myVariable);
+            });
+        });
+
+        $(document).ready(function () {
+            $('#EditTask').on('submit', function (e) {
+                e.preventDefault();
+
+                $.ajax({
+                    url: '/New/UpdateTask',
+                    type: 'POST',
+                    data: {
+                        task_name: $('#task_name').val(),
+                        description: $('#description').val(),
+                        reward: $('#reward').val(),
+                        task_id: $('input[name="task_id"]').val(),
+                        pid: $('input[name="pid"]').val(),
+                        proj_id: $('input[name="proj_id"]').val()
+                    },
+                    success: function (response) {
+                        location.reload();
+                    },
+                    error: function (xhr, status, error) {
+                        // Handle any errors here
+                        console.error(error);
+                    }
+                });
+            });
+        });
+
+        $(document).ready(function () {
+            $('#CreateTask').on('submit', function (e) {
+                e.preventDefault();
+
+                $.ajax({
+                    url: $(this).attr('action'),  
+                    type: 'POST',  
+                    data: $(this).serialize(),  
+                    success: function (response) {
+                        location.reload();
+                    },
+                    error: function (xhr, status, error) {
+                        alert('An error occurred: ' + error);
+                    }
+                });
+            });
+        });
+
+        $('.DelEdit').click(function (e) {
+            e.preventDefault();
+
+            $.ajax({
+                url: $(this).attr('href'),
+                type: 'POST', 
+                success: function (response) {
+                    location.reload();
+                },
+                error: function (xhr, status, error) {
+                    console.error(error);
+                }
+            });
+        });
+
+        $('#AddUser').on('submit', function (e) {
+            e.preventDefault();
+
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: $(this).serialize(),
+                success: function (response) {
+                    location.reload();
+
+                },
+                error: function (xhr, status, error) {
+                    if (xhr.status == 404) {
+                        alert(xhr.responseText);
+                    } else {
+                        alert('An error occurred: ' + error);
+                    }
+                }
+            });
+        });
+    </script>
+}
+

@@ -1,0 +1,22 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+    ViewData["HideNavigation"] = true;
+
+    
+}
+<button class="signupindex">Sign Up</button>
+<div class="text-left">
+    <h1 id="Title">Task Racer</h1>
+    <h3 class="h3index">Getting way too bored with your work?</h3>
+    <h3 class="h3index">Make it a better experience</h3>
+
+    <button class="gamify">Gamify your experience</button>
+</div>
+
+@section Scripts{
+    <script>
+        $(".signupindex").click(function (e) {
+            window.location.href="/New/SignUp";
+        })
+    </script>
+}

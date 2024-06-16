@@ -1,0 +1,233 @@
+﻿@model List<Progress>
+@if (!(bool)ViewBag.access)
+{
+    <h3>Access forbidden</h3>
+}
+else if (Model == null)
+{
+    <h2>Oops! This progress does not exist!</h2>
+} 
+else{
+    @if (ViewBag.owner == ViewBag.currentUser)
+    {
+        <button id="progress" class="buttons">Create Progress</button>
+    }
+    else
+    {
+        <button id="progress" class="hidden">Create Progress</button>
+    }
+
+    <button id="user" class="buttons">Users</button>
+    <br />
+    <br />
+    <h2>Progress List</h2>
+    @foreach (Progress prog in Model)
+    {
+        <div class="project">
+            <a href='@Url.Action("ShowTasks","New", new {pid = prog.pid, proj_id = ViewBag.proj_Id})' class="projectN">@prog.name</a>
+            @if (ViewBag.owner == ViewBag.currentUser)
+            {
+                <a href="@Url.Action("DeleteProgress","New", new {pid = prog.pid, proj_id = ViewBag.proj_Id})" class="DelEdit buttons projectB" style="right:0;">Delete</a>
+                <button type="button" class="edit buttons projectB" data-myvariable="@prog.pid">Edit Progress</button>
+            }
+        </div>
+    }
+
+    <div class="overlay" id="progOverlay">
+        <div class="floatingMenu" id="progMenu">
+            <h2>Create Progress</h2>
+            <form asp-action="CreateProgress" id="CreateProgress">
+                <input type="hidden" value="@ViewBag.proj_Id" name="proj_id" />
+                <input type="hidden" value="@ViewBag.userID" name="users" />
+                <div class="form-group">
+                    <label for="name" class="control-label custominputs">Name</label>
+                    <input name="name" class="form-control custominputs" />
+                </div>
+                <div class="form-group">
+                    <input type="submit" value="Create" class="custominputs buttons" onsubmit="ShowTasks.cshtml" />
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="overlay" id="userOverlay">
+        <div class="floatingMenu" id="userMenu">
+            @if (ViewBag.owner == ViewBag.currentUser)
+            {
+                <h2>Add User to project</h2>
+                <form asp-action="AddUserToProject" id="AddUser">
+                    <input type="hidden" value="@ViewBag.proj_Id" name="proj_id" />
+                    <div class="form-group">
+                        <label for="name" class="control-label custominputs">User id</label>
+                        <input name="user_ID" class="form-control custominputs" id="AddUserField" />
+                    </div>
+                    <div class="form-group">
+                        <input type="submit" value="Add" class="custominputs buttons" onsubmit="ShowTasks.cshtml" />
+                    </div>
+                </form>
+                <br />
+            }
+
+            <h2>Users that have acces right now:</h2>
+            @foreach (User user in ViewBag.Array)
+            {
+                <p>@user.Id       @user.username    
+                    @if (ViewBag.owner == ViewBag.currentUser)
+                    {
+                        @if (!(ViewBag.owner == user.Id))
+                        {
+                            <a href="@Url.Action("DeleteUserFromProject","New", new {user = user.Id, proj_id = ViewBag.proj_Id})" class="DelEdit">Delete</a>
+                        }
+                    }
+                </p>
+            }
+        </div>
+    </div>
+
+    <div class="overlay" id="editOverlay">
+        <div class="floatingMenu" id="editMenu">
+            <h2>Edit Progress</h2>
+            <form asp-action="UpdateProgress" id="UpdateProgress">
+                <input type="hidden" name="proj_id" value="@ViewBag.proj_Id">
+                <input type="hidden" name="pid" value="" id="pid">
+                <div class="form-group">
+                    <label for="name" class="control-label custominputs">Name</label>
+                    <input name="name" class="form-control custominputs" id="AddUserField" />
+                </div>
+                <div class="form-group">
+                    <input type="submit" value="Submit" class="custominputs buttons" onsubmit="ShowTasks.cshtml" />
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        #progMenu, #progOverlay, #userMenu, #userOverlay, #editOverlay, #editMenu {
+            display: none;
+        }
+    </style>
+}
+
+@section Scripts{
+    <script src="https://ajax.aspnetcdn.com/ajax/jquery.unobtrusive-ajax/3.2.6/jquery.unobtrusive-ajax.min.js"></script>
+    <script>
+        document.getElementById('progress').addEventListener('click', function () {
+            document.getElementById('progOverlay').style.display = 'block';
+            document.getElementById('progMenu').style.display = 'block';
+        });
+
+        document.getElementById('progOverlay').addEventListener('click', function () {
+            document.getElementById('progOverlay').style.display = 'none';
+            document.getElementById('progMenu').style.display = 'none';
+        });
+
+        document.getElementById('progMenu').addEventListener('click', function (event) {
+            event.stopPropagation();
+        });
+
+        document.getElementById('user').addEventListener('click', function () {
+            document.getElementById('userOverlay').style.display = 'block';
+            document.getElementById('userMenu').style.display = 'block';
+        });
+
+        document.getElementById('userOverlay').addEventListener('click', function () {
+            document.getElementById('userOverlay').style.display = 'none';
+            document.getElementById('userMenu').style.display = 'none';
+        });
+
+        document.getElementById('userMenu').addEventListener('click', function (event) {
+            event.stopPropagation();
+        });
+
+        document.getElementById('editOverlay').addEventListener('click', function () {
+            document.getElementById('editOverlay').style.display = 'none';
+            document.getElementById('editMenu').style.display = 'none';
+        });
+
+        document.getElementById('editMenu').addEventListener('click', function (event) {
+            event.stopPropagation();
+        });
+
+        $(document).ready(function () {
+            $(".edit").click(function () {
+                document.getElementById('editOverlay').style.display = 'block';
+                document.getElementById('editMenu').style.display = 'block';
+                var myVariable = $(this).data("myvariable");
+                $("#pid").val(myVariable);
+            });
+        });
+
+
+        $(document).ready(function () {
+            $('#CreateProgress').on('submit', function (e) {
+                e.preventDefault();
+
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function (response) {
+                        location.reload()
+                    },
+                    error: function (xhr, status, error) {
+                        alert('An error occurred: ' + error);
+                    }
+                });
+            });
+        });
+
+        $(document).ready(function () {
+            $('#UpdateProgress').on('submit', function (e) {
+                e.preventDefault();
+
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function (response) {
+                        location.reload()
+                    },
+                    error: function (xhr, status, error) {
+                        alert('An error occurred: ' + error);
+                    }
+                });
+            });
+        });
+
+        $('#AddUser').on('submit', function (e) {
+            e.preventDefault();
+
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: $(this).serialize(),
+                success: function (response) {
+                    location.reload();
+                    
+                },
+                error: function (xhr, status, error) {
+                    if (xhr.status == 404) {
+                        alert(xhr.responseText);
+                    } else {
+                        alert('An error occurred: ' + error);
+                    }
+                }
+            });
+        });
+
+
+        $('.DelEdit').click(function (e) {
+            e.preventDefault();
+
+            $.ajax({
+                url: $(this).attr('href'),
+                type: 'POST',
+                success: function (response) {
+                    location.reload();
+                },
+                error: function (xhr, status, error) {
+                    console.error(error);
+                }
+            });
+        });
+    </script>
+}
